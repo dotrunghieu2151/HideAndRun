@@ -13,6 +13,8 @@ public class Player : MonoBehaviour
     private IInputSystem _inputSystem;
     private Rigidbody _rigidbody;
 
+    private bool _isDisabled = false;
+
     private void Awake()
     {
         _rigidbody = GetComponent<Rigidbody>();
@@ -22,10 +24,30 @@ public class Player : MonoBehaviour
     {
         _inputSystem = GameInput.Instance;
         _inputSystem.OnMovement += Move;
+
+        GuardNavigation.OnPlayerSpotted += Disable;
+        ExitPath.OnEnter += Disable;
+    }
+
+    private void OnDestroy()
+    {
+        GuardNavigation.OnPlayerSpotted -= Disable;
+        ExitPath.OnEnter -= Disable;
+    }
+
+    private void Disable(object sender, EventArgs e)
+    {
+        _isDisabled = true;
     }
 
     private void Move(object sender, IInputSystem.OnMovementEventArgs args)
     {
+        if (_isDisabled)
+        {
+            _direction = Vector3.zero;
+            return;
+        }
+
         _direction = new(args.inputVector.x, 0f, args.inputVector.y);
     }
 

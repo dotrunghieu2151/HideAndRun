@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 public class GuardNavigation : MonoBehaviour
 {
+    public static event EventHandler OnPlayerSpotted;
     [SerializeField] private Transform _paths;
     [SerializeField] private float _speed = 3;
     [SerializeField] private float _waitTime = 0.3f;
@@ -13,6 +15,9 @@ public class GuardNavigation : MonoBehaviour
 
     [SerializeField] private float _viewDistance;
     [SerializeField] private Player _player;
+    [SerializeField] private float _playerVisibleTimerMax = 0.5f;
+
+    private float _playerVisibleTimer;
     private float _viewAngle;
     private Color _defaultSpotlightColor;
 
@@ -42,11 +47,19 @@ public class GuardNavigation : MonoBehaviour
     {
         if (CanSeePlayer(_player))
         {
-            _spotLight.color = Color.red;
+            _playerVisibleTimer += Time.deltaTime;
         }
         else
         {
-            _spotLight.color = _defaultSpotlightColor;
+            _playerVisibleTimer -= Time.deltaTime;
+        }
+
+        _playerVisibleTimer = Mathf.Clamp(_playerVisibleTimer, 0, _playerVisibleTimerMax);
+        _spotLight.color = Color.Lerp(_defaultSpotlightColor, Color.red, _playerVisibleTimer);
+
+        if (_playerVisibleTimer >= _playerVisibleTimerMax)
+        {
+            OnPlayerSpotted?.Invoke(this, EventArgs.Empty);
         }
     }
 
